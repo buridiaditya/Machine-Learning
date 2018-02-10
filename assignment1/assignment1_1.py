@@ -16,11 +16,15 @@ def L2Cost(X, W, y_target):
 	grads = X.T.dot(scores - y_target)
 
 	return cost, grads
-
+"""
 def Stochastic_Gradient_Descent(X, y_target, W, epochs=100, learning_rate=10e-5):
 	for i in range(epochs):
 		# To prevent overfitting of data
 		for j in range(10):
-
+	return
+"""
 
 # Load Data and create Training and Test data
+with open('kc_house_data.csv','rt') as file:
+	X = np.loadtxt(file,delimiter=",")
+	print(X.shape)
