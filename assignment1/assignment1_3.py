@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as pl
 import csv
+import math
 import pandas as pd
 
 # Linear Regression Model
@@ -23,12 +24,10 @@ class LinearRegression:
         grads = 2*X.T.dot(scores - y_target)/N + 2*self.W*reg
         return cost, grads
 
-    def train(self,X_train, y_target,X_test,y_test, epochs=1000, learning_rate=1e-4,lr_decay = 0.95,reg = 0.0,batch_size=None):
+    def train(self,X_train, y_target,X_test,y_test, epochs=10000, learning_rate=1e-4,lr_decay = 0.93,reg = 0.0,batch_size=None):
         N,M = X_train.shape
         #self.W = np.random.randn(M)*100
         self.W = np.zeros(M)
-        if batch_size is None:
-            batch_size = N
         cost_data = []
         old_cost = 0.0
         for i in range(epochs):
@@ -36,6 +35,7 @@ class LinearRegression:
             if batch_size is None:
                 X_batch = X_train
                 y_batch = y_target
+                batch_size = N
             else:
                 index = np.random.choice(N,batch_size)
                 X_batch = X_train[index]
@@ -47,8 +47,8 @@ class LinearRegression:
                 self.W = self.W - learning_rate*dW
             print("Cost after %d epochs : %f" %(i,cost))
             print("Cost difference %f" %(np.abs(cost-old_cost)) )
+            cost_data.append(math.fabs(cost-old_cost))
             old_cost = cost
-            cost_data.append(cost)
             if i%10 == 0:
                 learning_rate *= lr_decay
                 print("\nAccuracy after %d epochs : %f\n" %(i,np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
@@ -95,7 +95,7 @@ X = X_temp
 
 # Split data into train and test data
 #
-size_of_train = int(N*0.8)
+size_of_train = int(N*0.9)
 X_train = X[0:size_of_train]
 X_test = X[size_of_train:N]
 y_train = y_target[0:size_of_train]
