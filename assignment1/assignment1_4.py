@@ -13,12 +13,35 @@ class LinearRegression:
         return y_predict
 
 
+    def L1Cost(self, X, y_target,reg):
+        cost = 0.0
+        N,M = X.shape
+        grads = np.ones(self.W.shape)
+        scores = X.dot(self.W)
+        cost = np.sum(np.abs(scores - y_target))/N + reg * np.sum(self.W*self.W)
+        mask = np.ones(scores-y_target)
+        mask[mask<0] = -1
+        grads = 2*X.T.dot(mask)/N + 2*self.W*reg
+        return cost, grads
+
     def L2Cost(self, X, y_target,reg):
         cost = 0.0
         N,M = X.shape
         grads = np.ones(self.W.shape)
         scores = X.dot(self.W)
         cost = np.sum(np.square(scores - y_target))/N + reg * np.sum(self.W*self.W)
+        grads = 2*X.T.dot(scores - y_target)/N + 2*self.W*reg
+        return cost, grads
+
+    def L3Cost(self, X, y_target,reg):
+        cost = 0.0
+        N,M = X.shape
+        grads = np.ones(self.W.shape)
+        scores = X.dot(self.W)
+        cost = np.sum(np.square(scores - y_target))/N + reg * np.sum(self.W*self.W)
+        ###### TODO //
+        mask = np.ones(scores-y_target)
+        mask[mask<0] = -1
         grads = 2*X.T.dot(scores - y_target)/N + 2*self.W*reg
         return cost, grads
 
@@ -30,13 +53,15 @@ class LinearRegression:
         for i in range(epochs):
             cost, dW = self.L2Cost(X_train,y_target,reg)
             self.W = self.W - learning_rate*dW
-                        #print("Cost after %d epochs : %f" %(i,cost))
+
+            if(i%10 == 0)
+                cost_data.append(cost)
+
+            #print("Cost after %d epochs : %f" %(i,cost))
             if i%100 == 0:
                 learning_rate *= lr_decay
                 #print("\nAccuracy after %d epochs : %f\n" %(i,np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
-                print("Cost difference after %d epochs : %f" %(i,np.abs(cost-old_cost) ))
-                cost_data.append(cost)
-
+                print("Cost difference after %d epochs : %f" %(i,np.abs(cost-old_cost)) )
             old_cost = cost
         return cost_data
 
@@ -99,8 +124,6 @@ print("\nRMSE with regularization 0.2: %f\n" %(np.sqrt(np.sum(np.square(model.pr
 cost_data_reg3 = np.array(model.train(X_train,y_train,X_test,y_test,reg=0.3))
 print("\nRMSE with regularization 0.3: %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
 
-axes = pl.gca()
-#axes.set_ylim(100000,100000000000)
 pl.plot(range(cost_data.shape[0]),cost_data,'-',label="No Reg")
 pl.plot(range(cost_data_reg1.shape[0]),cost_data_reg1,'-',label="Reg 0.1")
 pl.plot(range(cost_data_reg2.shape[0]),cost_data_reg2,'-',label="Reg 0.2")

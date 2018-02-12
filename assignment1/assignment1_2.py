@@ -24,31 +24,37 @@ class LinearRegression:
 
     def trainSGD(self,X_train, y_target,X_test,y_test, epochs=1000, learning_rate=0.05,lr_decay = 1,reg = 0.0,batch_size=None):
         N,M = X_train.shape
-        self.W = np.random.randn(M)*0.01
+        self.W = np.random.randn(M)
         old_cost = 0.0
         cost_data = []
         for i in range(epochs):
             cost, dW = self.L2Cost(X_train,y_target,reg)
             self.W = self.W - learning_rate*dW
             cost_data.append(cost)
-            print("Cost after %d epochs : %f" %(i,cost))
-            print("Cost difference %f" %(np.abs(cost-old_cost)) )
-            old_cost = cost
+            #print("Cost after %d epochs : %f" %(i,cost))
+            #print("Cost difference %f" %(np.abs(cost-old_cost)) )
             if i%100 == 0:
                 learning_rate *= lr_decay
-                print("\nAccuracy after %d epochs : %f\n" %(i,np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
+                #print("\nAccuracy after %d epochs : %f\n" %(i,np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
+                print("Cost difference after %d epochs :%f" %(i,np.abs(cost-old_cost)) )
+            old_cost = cost
         return cost_data
 
-    def trainIRLS(self,X_train, y_target,X_test,y_test, reg = 0.0):
-
+    def trainIRLS(self,X_train, y_target,X_test,y_test,epochs = 1000, reg = 0.0):
+        old_cost = 0.0
         N,M = X_train.shape
-        self.W = np.random.randn(M)*0.01
-
-        cost, dW = self.L2Cost(X_train,y_train,reg)
-        H = X_train.T.dot(X_train)
-        H_inv = np.linalg.inv(H)
-        self.W = self.W - H_inv.dot(dW)
-        print("\nAccuracy using IRLS : %f\n" %(np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
+        self.W = np.random.randn(M)
+        for i in range(epochs):
+            cost, dW = self.L2Cost(X_train,y_train,reg)
+            H = X_train.T.dot(X_train)
+            H_inv = np.linalg.inv(H)
+            self.W = self.W - H_inv.dot(dW)
+            cost_data = []
+            cost_data.append(cost)
+            if i%100 == 0:
+                print("Cost difference after %d epochs :%f" %(i,np.abs(cost-old_cost)) )
+            old_cost = cost
+        #print("\nAccuracy using IRLS : %f\n" %(np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
 
 # Load Data and create Training and Test data
 #
@@ -101,4 +107,5 @@ X_test = X_temp
 model = LinearRegression()
 
 model.trainSGD(X_train,y_train,X_test,y_test)
+
 model.trainIRLS(X_train,y_train,X_test,y_test)
