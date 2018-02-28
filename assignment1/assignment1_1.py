@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 import csv
 import pandas as pd
+import math
 
 # Linear Regression Model
 class LinearRegression:
@@ -22,23 +23,22 @@ class LinearRegression:
         grads = 2*X.T.dot(scores - y_target)/N + 2*self.W*reg
         return cost, grads
 
-    def train(self,X_train, y_target,X_test,y_test, epochs=900, learning_rate=0.05,lr_decay = 1,reg = 0.0):
+    def train(self,X_train, y_target,X_test,y_test, epochs=1000, learning_rate=0.05,lr_decay = 1,reg = 0.0):
         N,M = X_train.shape
         self.W = np.random.randn(M)
+        cost = 1
         old_cost = 0.0
-        cost_data = []
         for i in range(epochs):
             cost, dW = self.L2Cost(X_train,y_target,reg)
             self.W = self.W - learning_rate*dW
-                        #print("Cost after %d epochs : %f" %(i,cost))
+            #print("Cost after %d epochs : %f" %(i,cost))
+            if(math.fabs(old_cost - cost) < 0.01):
+                break;
             if i%100 == 0:
                 learning_rate *= lr_decay
                 #print("\nAccuracy after %d epochs : %f\n" %(i,np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
-                print("Cost difference after %d epochs : %f" %(i,np.abs(cost-old_cost) ))
-                cost_data.append(cost)
-
+                #print("Cost difference after %d epochs : %f" %(i,np.abs(cost-old_cost) ))
             old_cost = cost
-        return cost_data
 
 # Load Data and create Training and Test data
 #
@@ -90,24 +90,45 @@ X_test = X_temp
 
 model = LinearRegression()
 
-cost_data = np.array(model.train(X_train,y_train,X_test,y_test))
-print("\nRMSE without regularization : %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
-cost_data_reg1 = np.array(model.train(X_train,y_train,X_test,y_test,reg=0.1))
-print("\nRMSE with regularization 0.1: %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
-cost_data_reg2 = np.array(model.train(X_train,y_train,X_test,y_test,reg=0.2))
-print("\nRMSE with regularization 0.2: %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
-cost_data_reg3 = np.array(model.train(X_train,y_train,X_test,y_test,reg=0.3))
-print("\nRMSE with regularization 0.3: %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
+j = 0.0
+rmse = []
+reg = []
+models = []
+for i in range(20):
+    reg.append(j)
+    model.train(X_train,y_train,X_test,y_test,reg=j)
+    rmse.append(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N))
+    print("Reg : %f"%(j), model.W)
+    j += 0.05
 
-axes = pl.gca()
-#axes.set_ylim(100000,100000000000)
-pl.plot(range(cost_data.shape[0]),cost_data,'-',label="No Reg")
-pl.plot(range(cost_data_reg1.shape[0]),cost_data_reg1,'-',label="Reg 0.1")
-pl.plot(range(cost_data_reg2.shape[0]),cost_data_reg2,'-',label="Reg 0.2")
-pl.plot(range(cost_data_reg3.shape[0]),cost_data_reg3,'-',label="Reg 0.3")
-pl.title("cost vs epochs")
-pl.legend()
-
+pl.plot(reg,rmse)
+pl.xlabel("Regularization values")
+pl.ylabel("RMSE values")
+pl.title("Regularisation versus RMSE")
 pl.show()
 
+#cost_data = np.array(model.train(X_train,y_train,X_test,y_test))
+#print(model.W)
+#print("\nTest RMSE without regularization : %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
+#cost_data_reg1 = np.array(model.train(X_train,y_train,X_test,y_test,reg=0.1))
+#print(model.W)
+#print("\nTest RMSE with regularization 0.1: %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
+#cost_data_reg2 = np.array(model.train(X_train,y_train,X_test,y_test,reg=0.2))
+#print(model.W)
+#print("\nTest RMSE with regularization 0.2: %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
+#cost_data_reg3 = np.array(model.train(X_train,y_train,X_test,y_test,reg=0.3))
+#print(model.W)
+#print("\nTest RMSE with regularization 0.3: %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
 
+#axes = pl.gca()
+#axes.set_ylim(100000,100000000000)
+#pl.plot(range(cost_data.shape[0]),cost_data,'-',label="No Reg")
+#pl.plot(range(cost_data_reg1.shape[0]),cost_data_reg1,'-',label="Reg 0.1")
+#pl.plot(range(cost_data_reg2.shape[0]),cost_data_reg2,'-',label="Reg 0.2")
+#pl.plot(range(cost_data_reg3.shape[0]),cost_data_reg3,'-',label="Reg 0.3")
+#pl.title("cost vs epochs")
+#pl.xlabel("epochs x 50")
+#pl.ylabel("cost")
+#pl.legend()
+
+#pl.show()

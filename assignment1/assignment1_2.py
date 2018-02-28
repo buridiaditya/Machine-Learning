@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 import csv
 import pandas as pd
+import math
 
 # Linear Regression Model
 class LinearRegression:
@@ -24,38 +25,47 @@ class LinearRegression:
 
     def trainSGD(self,X_train, y_target,X_test,y_test, epochs=1000, learning_rate=0.05,lr_decay = 1,reg = 0.0,batch_size=None):
         N,M = X_train.shape
+        N_test,_ = X_test.shape
         self.W = np.random.randn(M)
         old_cost = 0.0
         cost_data = []
+        epochs_list = []
         for i in range(epochs):
             cost, dW = self.L2Cost(X_train,y_target,reg)
             self.W = self.W - learning_rate*dW
-            cost_data.append(cost)
-            #print("Cost after %d epochs : %f" %(i,cost))
-            #print("Cost difference %f" %(np.abs(cost-old_cost)) )
+            if i%10 == 0:
+                epochs_list.append(i)
+                cost_data.append(np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N_test))
+            if((math.fabs(old_cost - cost) < 0.01)):
+                break;
             if i%100 == 0:
                 learning_rate *= lr_decay
                 #print("\nAccuracy after %d epochs : %f\n" %(i,np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
-                print("Cost difference after %d epochs :%f" %(i,np.abs(cost-old_cost)) )
             old_cost = cost
-        return cost_data
+        return epochs_list,cost_data
 
     def trainIRLS(self,X_train, y_target,X_test,y_test,epochs = 1000, reg = 0.0):
         old_cost = 0.0
         N,M = X_train.shape
+        N_test,_ = X_test.shape
+        cost_data = []
+        epochs_list = []
         self.W = np.random.randn(M)
         for i in range(epochs):
             cost, dW = self.L2Cost(X_train,y_train,reg)
             H = X_train.T.dot(X_train)
             H_inv = np.linalg.inv(H)
             self.W = self.W - H_inv.dot(dW)
-            cost_data = []
-            cost_data.append(cost)
             if i%100 == 0:
-                print("Cost difference after %d epochs :%f" %(i,np.abs(cost-old_cost)) )
+                epochs_list.append(i)
+                cost_data.append(np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N_test))
+            if(math.fabs(old_cost-cost) < 0.01):
+                break;
+            if i%1000 == 0:
+                print("Cost after %d epochs %f"%(i,cost))
             old_cost = cost
-        #print("\nAccuracy using IRLS : %f\n" %(np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
-
+            #print("\nAccuracy using IRLS : %f\n" %(np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
+        return epochs_list,cost_data
 # Load Data and create Training and Test data
 #
 filename = 'kc_house_data.csv'
@@ -106,6 +116,24 @@ X_test = X_temp
 
 model = LinearRegression()
 
-model.trainSGD(X_train,y_train,X_test,y_test)
+epochs_list_sgd = []
+epochs_list_irls = []
+rmse_sgd = []
+rmse_irls = []
+epochs_list_sgd,rmse_sgd = model.trainSGD(X_train,y_train,X_test,y_test,epochs=10000)
+epochs_list_irls,rmse_irls = model.trainIRLS(X_train,y_train,X_test,y_test,epochs=10000)
 
+pl.plot(epochs_list_sgd,rmse_sgd,'-',label="Gradient Descent")
+pl.plot(epochs_list_irls,rmse_irls,'-',label="IRLS")
+pl.xlabel("epochs")
+pl.ylabel("RMSE")
+pl.title("Performance of Various learning algorithms vs iterations")
+pl.legend()
+pl.show()
+
+"""
+model.trainSGD(X_train,y_train,X_test,y_test)
+print("\nRMSE with SGD: %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
 model.trainIRLS(X_train,y_train,X_test,y_test)
+print("\nRMSE with IRLS : %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
+"""

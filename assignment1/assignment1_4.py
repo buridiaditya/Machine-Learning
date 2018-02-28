@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as pl
 import csv
+import math
 import pandas as pd
 
 # Linear Regression Model
@@ -19,9 +20,9 @@ class LinearRegression:
         grads = np.ones(self.W.shape)
         scores = X.dot(self.W)
         cost = np.sum(np.abs(scores - y_target))/N + reg * np.sum(self.W*self.W)
-        mask = np.ones(scores-y_target)
-        mask[mask<0] = -1
-        grads = 2*X.T.dot(mask)/N + 2*self.W*reg
+        mask = np.ones(y_target.shape)
+        mask[(scores-y_target)<0] = -1
+        grads = X.T.dot(mask)/N + 2*self.W*reg
         return cost, grads
 
     def L2Cost(self, X, y_target,reg):
@@ -38,32 +39,44 @@ class LinearRegression:
         N,M = X.shape
         grads = np.ones(self.W.shape)
         scores = X.dot(self.W)
-        cost = np.sum(np.square(scores - y_target))/N + reg * np.sum(self.W*self.W)
-        ###### TODO //
-        mask = np.ones(scores-y_target)
-        mask[mask<0] = -1
-        grads = 2*X.T.dot(scores - y_target)/N + 2*self.W*reg
+        cost = np.sum(np.abs(np.power(scores - y_target,3)))/N + reg * np.sum(self.W*self.W)
+        mask = 3*np.square(scores-y_target)
+        mask[(scores-y_target)<0] *= -1
+        grads = X.T.dot(mask)/N + 2*self.W*reg
         return cost, grads
 
-    def train(self,X_train, y_target,X_test,y_test, epochs=900, learning_rate=0.05,lr_decay = 1,reg = 0.0):
+    def train(self,X_train, y_target,X_test,y_test, cost_function="L2",epochs=2000, learning_rate=0.0000001,lr_decay = 1,reg = 0.0):
         N,M = X_train.shape
         self.W = np.random.randn(M)
         old_cost = 0.0
-        cost_data = []
+        """
+        costfunction = self.L3Cost
+        if cost_function == "L1":
+            costfucntion = self.L1Cost
+            #print("Selected L1")
+        elif cost_function == "L2":
+            costfucntion = self.L2Cost
+            #print("Selected L2")
+        elif cost_function == "L3":
+            costfucntion = self.L3Cost
+            #print("Selected L3")
+            """
         for i in range(epochs):
-            cost, dW = self.L2Cost(X_train,y_target,reg)
+            if(cost_function == "L1"):
+                cost, dW = self.L1Cost(X_train,y_target,reg)
+            if(cost_function == "L2"):
+                cost, dW = self.L2Cost(X_train,y_target,reg)
+            if(cost_function == "L3"):
+                cost, dW = self.L3Cost(X_train,y_target,reg)
             self.W = self.W - learning_rate*dW
 
-            if(i%10 == 0)
-                cost_data.append(cost)
-
-            #print("Cost after %d epochs : %f" %(i,cost))
+            if(math.fabs(old_cost-cost) < 0.01):
+                break;
             if i%100 == 0:
                 learning_rate *= lr_decay
                 #print("\nAccuracy after %d epochs : %f\n" %(i,np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
                 print("Cost difference after %d epochs : %f" %(i,np.abs(cost-old_cost)) )
             old_cost = cost
-        return cost_data
 
 # Load Data and create Training and Test data
 #
@@ -114,9 +127,38 @@ X_temp[:,1:M] = X_test
 X_test = X_temp
 
 model = LinearRegression()
+model.train(X_train,y_train,X_test,y_test,cost_function="L1",epochs=10000,learning_rate=0.05)
+print(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N))
+"""
+j = 0.05
+lr_list = []
+rmse_linear = []
+rmse_sq = []
+rmse_cubic = []
+for i in range(30):
+    model.train(X_train,y_train,X_test,y_test,cost_function="L1",epochs=10000,learning_rate=j)
+    print("L1 with %.9f lr: "%(j),model.W)
+    rmse_linear.append(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N))
+    model.train(X_train,y_train,X_test,y_test,cost_function="L2",epochs=10000,learning_rate=j)
+    print("L2 with %.9f lr: "%(j),model.W)
+    rmse_sq.append(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N))
+    model.train(X_train,y_train,X_test,y_test,cost_function="L3",epochs=10000,learning_rate=j)
+    print("L3 with %.9f lr: "%(j),model.W)
+    rmse_cubic.append(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N))
+    lr_list.append(j)
+    j /= 2
 
-cost_data = np.array(model.train(X_train,y_train,X_test,y_test))
-print("\nRMSE without regularization : %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
+pl.plot(lr_list,rmse_linear,'-',label="L1")
+pl.plot(lr_list,rmse_sq,'-',label="L2")
+pl.plot(lr_list,rmse_cubic,'-',label="L3")
+pl.xlabel("learning rate")
+pl.ylabel("RMSE")
+pl.title("Performance of various cost fucntions vs learning rates")
+pl.legend()
+pl.show()
+
+"""
+"""
 cost_data_reg1 = np.array(model.train(X_train,y_train,X_test,y_test,reg=0.1))
 print("\nRMSE with regularization 0.1: %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
 cost_data_reg2 = np.array(model.train(X_train,y_train,X_test,y_test,reg=0.2))
@@ -133,4 +175,4 @@ pl.legend()
 
 pl.show()
 
-
+"""
