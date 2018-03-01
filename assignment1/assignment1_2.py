@@ -40,7 +40,7 @@ class LinearRegression:
                 break;
             if i%100 == 0:
                 learning_rate *= lr_decay
-                #print("\nAccuracy after %d epochs : %f\n" %(i,np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
+                print("\nAccuracy after %d epochs : %f\n" %(i,np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N_test)) )
             old_cost = cost
         return epochs_list,cost_data
 
@@ -51,20 +51,23 @@ class LinearRegression:
         cost_data = []
         epochs_list = []
         self.W = np.random.randn(M)
-        for i in range(epochs):
-            cost, dW = self.L2Cost(X_train,y_train,reg)
-            H = X_train.T.dot(X_train)
-            H_inv = np.linalg.inv(H)
-            self.W = self.W - H_inv.dot(dW)
-            if i%100 == 0:
-                epochs_list.append(i)
-                cost_data.append(np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N_test))
-            if(math.fabs(old_cost-cost) < 0.01):
-                break;
-            if i%1000 == 0:
-                print("Cost after %d epochs %f"%(i,cost))
-            old_cost = cost
-            #print("\nAccuracy using IRLS : %f\n" %(np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
+        #for i in range(epochs):
+        epochs_list.append(0)
+        cost_data.append(np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N_test))
+
+        cost, dW = self.L2Cost(X_train,y_train,reg)
+        H = 2*X_train.T.dot(X_train)/N
+        H_inv = np.linalg.inv(H)
+        self.W = self.W - H_inv.dot(dW)
+           # if i%100 == 0:
+        epochs_list.append(1)
+        cost_data.append(np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N_test))
+           # if(math.fabs(old_cost-cost) < 0.01):
+           #     break;
+           # if i%1000 == 0:
+           #     print("Cost after %d epochs %f"%(i,cost))
+           # old_cost = cost
+        print("\nAccuracy using IRLS : %f\n" %(np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N_test)) )
         return epochs_list,cost_data
 # Load Data and create Training and Test data
 #
