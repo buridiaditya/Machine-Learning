@@ -137,13 +137,13 @@ rmse_sq = []
 rmse_cubic = []
 for i in range(20):
     model.train(X_train,y_train,X_test,y_test,cost_function="L1",epochs=10000,learning_rate=j)
-    print("L1 with %.12f lr: "%(j),model.W)
+    print("Model Parameters L1 with %.12f lr: "%(j),model.W)
     rmse_linear.append(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N))
     model.train(X_train,y_train,X_test,y_test,cost_function="L2",epochs=10000,learning_rate=j)
-    print("L2 with %.12f lr: "%(j),model.W)
+    print("Model Parameters L2 with %.12f lr: "%(j),model.W)
     rmse_sq.append(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N))
     model.train(X_train,y_train,X_test,y_test,cost_function="L3",epochs=10000,learning_rate=j)
-    print("L3 with %.12f lr: "%(j),model.W)
+    print("Model Parameters L3 with %.12f lr: "%(j),model.W)
     rmse_cubic.append(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N))
     lr_list.append(j)
     j /= 2

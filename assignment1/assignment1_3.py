@@ -169,7 +169,7 @@ lr_list = []
 rmse_linear = []
 rmse_sq = []
 rmse_cubic = []
-for i in range(20):
+for i in range(15):
     model.train(X_train_l,y_train,X_test_l,y_test,epochs=20000,learning_rate=j)
     print("Trained Model Values - Linear features with %.12f lr: "%(j),model.W)
     rmse_linear.append(np.sqrt(np.sum(np.square(model.predict(X_test_l)-y_test))/N))

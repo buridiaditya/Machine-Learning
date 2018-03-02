@@ -4,22 +4,22 @@ Shape of X_train :  (17290, 4)
 Shape of X_test :  (4323, 4)
 Shape of y_train :  (17290,)
 Shape of y_test :  (4323,)
-Cost difference after 0 epochs : 418531504889.027161
-Cost difference after 100 epochs : 7513768.925919
-Cost difference after 200 epochs : 486320.472321
-Cost difference after 300 epochs : 31596.541992
-Cost difference after 400 epochs : 2053.297531
-Cost difference after 500 epochs : 133.435410
-Cost difference after 600 epochs : 8.671463
-Cost difference after 700 epochs : 0.563507
-Cost difference after 800 epochs : 0.036621
+Cost difference after 0 epochs : 418532593730.566528
+Cost difference after 100 epochs : 7513886.024307
+Cost difference after 200 epochs : 486328.448975
+Cost difference after 300 epochs : 31597.062088
+Cost difference after 400 epochs : 2053.331329
+Cost difference after 500 epochs : 133.437592
+Cost difference after 600 epochs : 8.671585
+Cost difference after 700 epochs : 0.563522
+Cost difference after 800 epochs : 0.036636
 
 Test Error using Gradient Descent : 314935.674576
 
-Gradient Descent trained model parameters :  [ 533343.83233083   15751.22966207   17573.052731     28727.47997303
-  279574.65204963]
+Gradient Descent trained model parameters :  [ 533343.83233083   15751.22966248   17573.05273709   28727.47997999
+  279574.65204028]
 
 Test Error using IRLS : 314935.642707
 
-IRLS trained model parameters :  [ 533343.83233083   15751.17880192   17572.31378215   28726.6357272
+IRLS trained model parameters :  [ 533343.83233083   15751.17880192   17572.31378214   28726.6357272
   279575.78735784]
