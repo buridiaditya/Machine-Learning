@@ -35,7 +35,7 @@ class LinearRegression:
             if i%100 == 0:
                 learning_rate *= lr_decay
                 #print("\nAccuracy after %d epochs : %f\n" %(i,np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
-                #print("Cost difference after %d epochs : %f" %(i,np.abs(cost-old_cost)) )
+                print("Cost difference after %d epochs : %f" %(i,np.abs(cost-old_cost)) )
             old_cost = cost
 
 
@@ -169,25 +169,25 @@ lr_list = []
 rmse_linear = []
 rmse_sq = []
 rmse_cubic = []
-for i in range(30):
+for i in range(20):
     model.train(X_train_l,y_train,X_test_l,y_test,epochs=20000,learning_rate=j)
-    print("Linear with %f lr: "%(j),model.W)
+    print("Trained Model Values - Linear features with %.12f lr: "%(j),model.W)
     rmse_linear.append(np.sqrt(np.sum(np.square(model.predict(X_test_l)-y_test))/N))
     model.train(X_train_qa,y_train,X_test_qa,y_test,epochs=20000,learning_rate=j)
-    print("Quadratic with %f lr: "%(j),model.W)
+    print("Trained model values - Quadratic features with %.12f lr: "%(j),model.W)
     rmse_sq.append(np.sqrt(np.sum(np.square(model.predict(X_test_qa)-y_test))/N))
     model.train(X_train_cu,y_train,X_test_cu,y_test,epochs=20000,learning_rate=j)
-    print("Cubic with %f lr: "%(j),model.W)
+    print("Trained Model Values - Cubic features with %.12f lr: "%(j),model.W)
     rmse_cubic.append(np.sqrt(np.sum(np.square(model.predict(X_test_cu)-y_test))/N))
     lr_list.append(j)
     j /= 2
 
-pl.plot(lr_list,rmse_linear,'-',label="Linear")
-pl.plot(lr_list,rmse_sq,'-',label="Quadratic")
-pl.plot(lr_list,rmse_cubic,'-',label="Cubic")
+pl.semilogx(lr_list,rmse_linear,'-',label="Linear")
+pl.semilogx(lr_list,rmse_sq,'-',label="Quadratic")
+pl.semilogx(lr_list,rmse_cubic,'-',label="Cubic")
 pl.xlabel("learning rate")
 pl.ylabel("RMSE")
-pl.title("Performance of various features vs learning rates")
+pl.title("RMSE-Performance of various features vs learning rates")
 pl.legend()
 pl.show()
 

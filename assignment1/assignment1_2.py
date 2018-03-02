@@ -40,7 +40,8 @@ class LinearRegression:
                 break;
             if i%100 == 0:
                 learning_rate *= lr_decay
-                print("\nAccuracy after %d epochs : %f\n" %(i,np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N_test)) )
+                print("Cost difference after %d epochs : %f" %(i,np.abs(cost-old_cost) ))
+                #print("\nTest Error after %d epochs : %f\n" %(i,np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N_test)) )
             old_cost = cost
         return epochs_list,cost_data
 
@@ -67,7 +68,7 @@ class LinearRegression:
            # if i%1000 == 0:
            #     print("Cost after %d epochs %f"%(i,cost))
            # old_cost = cost
-        print("\nAccuracy using IRLS : %f\n" %(np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N_test)) )
+        print("\nTest Error using IRLS : %f\n" %(np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N_test)) )
         return epochs_list,cost_data
 # Load Data and create Training and Test data
 #
@@ -124,13 +125,16 @@ epochs_list_irls = []
 rmse_sgd = []
 rmse_irls = []
 epochs_list_sgd,rmse_sgd = model.trainSGD(X_train,y_train,X_test,y_test,epochs=10000)
+print("\nTest Error using Gradient Descent : %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )
+print("Gradient Descent trained model parameters : ",model.W)
 epochs_list_irls,rmse_irls = model.trainIRLS(X_train,y_train,X_test,y_test,epochs=10000)
+print("IRLS trained model parameters : ",model.W)
 
 pl.plot(epochs_list_sgd,rmse_sgd,'-',label="Gradient Descent")
 pl.plot(epochs_list_irls,rmse_irls,'-',label="IRLS")
 pl.xlabel("epochs")
 pl.ylabel("RMSE")
-pl.title("Performance of Various learning algorithms vs iterations")
+pl.title("RMSE-Performance of Various learning algorithms vs iterations")
 pl.legend()
 pl.show()
 

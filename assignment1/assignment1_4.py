@@ -129,35 +129,35 @@ X_test = X_temp
 model = LinearRegression()
 model.train(X_train,y_train,X_test,y_test,cost_function="L1",epochs=10000,learning_rate=0.05)
 print(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N))
-"""
+
 j = 0.05
 lr_list = []
 rmse_linear = []
 rmse_sq = []
 rmse_cubic = []
-for i in range(30):
+for i in range(20):
     model.train(X_train,y_train,X_test,y_test,cost_function="L1",epochs=10000,learning_rate=j)
-    print("L1 with %.9f lr: "%(j),model.W)
+    print("L1 with %.12f lr: "%(j),model.W)
     rmse_linear.append(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N))
     model.train(X_train,y_train,X_test,y_test,cost_function="L2",epochs=10000,learning_rate=j)
-    print("L2 with %.9f lr: "%(j),model.W)
+    print("L2 with %.12f lr: "%(j),model.W)
     rmse_sq.append(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N))
     model.train(X_train,y_train,X_test,y_test,cost_function="L3",epochs=10000,learning_rate=j)
-    print("L3 with %.9f lr: "%(j),model.W)
+    print("L3 with %.12f lr: "%(j),model.W)
     rmse_cubic.append(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N))
     lr_list.append(j)
     j /= 2
 
-pl.plot(lr_list,rmse_linear,'-',label="L1")
-pl.plot(lr_list,rmse_sq,'-',label="L2")
-pl.plot(lr_list,rmse_cubic,'-',label="L3")
+pl.semilogx(lr_list,rmse_linear,'-',label="L1")
+pl.semilogx(lr_list,rmse_sq,'-',label="L2")
+pl.semilogx(lr_list,rmse_cubic,'-',label="L3")
 pl.xlabel("learning rate")
 pl.ylabel("RMSE")
-pl.title("Performance of various cost fucntions vs learning rates")
+pl.title("RMSE-Performance of various cost fucntions vs learning rates")
 pl.legend()
 pl.show()
 
-"""
+
 """
 cost_data_reg1 = np.array(model.train(X_train,y_train,X_test,y_test,reg=0.1))
 print("\nRMSE with regularization 0.1: %f\n" %(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N)) )

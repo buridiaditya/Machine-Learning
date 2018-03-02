@@ -37,7 +37,7 @@ class LinearRegression:
             if i%100 == 0:
                 learning_rate *= lr_decay
                 #print("\nAccuracy after %d epochs : %f\n" %(i,np.sqrt(np.sum(np.square(self.predict(X_test)-y_test))/N)) )
-                #print("Cost difference after %d epochs : %f" %(i,np.abs(cost-old_cost) ))
+                print("Cost difference after %d epochs : %f" %(i,np.abs(cost-old_cost) ))
             old_cost = cost
 
 # Load Data and create Training and Test data
@@ -98,7 +98,7 @@ for i in range(20):
     reg.append(j)
     model.train(X_train,y_train,X_test,y_test,reg=j)
     rmse.append(np.sqrt(np.sum(np.square(model.predict(X_test)-y_test))/N))
-    print("Reg : %f"%(j), model.W)
+    print("With Regularisation Value : %f The model values are : "%(j), model.W)
     j += 0.05
 
 pl.plot(reg,rmse)
