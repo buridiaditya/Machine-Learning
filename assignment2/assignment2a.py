@@ -3,6 +3,7 @@ import re
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
+from neuralnetwork import NeuralNetwork
 
 # Read file in lines
 fd = open("Assignment_2_data.txt","r")
@@ -49,10 +50,21 @@ for i in range(N):
 		ind = unique_tokens.index(j)
 		x_encoded[i][ind] = 1;
 
-y_target = np.zeros(N)
+y_target = np.zeros((N,1))
 for i in range(len(y_target_names)):
 	if(y_target_names[i] == "ham"):
 		y_target[i] = 1
 
-# Training the model
+# Split training and test error
+trainN = int(0.8*N)
 
+X_train = x_encoded[0:trainN]
+y_train = y_target[0:trainN]
+
+X_test = x_encoded[trainN:]
+y_test = y_target[trainN:]
+
+# Training the model
+N,M = X_train.shape
+nn = NeuralNetwork(M,np.array([100,50]),1)
+nn.train(X_train,y_train,X_test,y_test)

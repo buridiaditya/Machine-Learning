@@ -1,18 +1,18 @@
 import numpy as np
 
 class NeuralNetwork(object):
-	def __init__(self,input_dim,hidden_dims,num_classes,activation_function,weight_scale=10e-2):
-		L = hidden_dims.shape
+	def __init__(self,input_dim,hidden_dims,num_classes,activation_function="tanh",weight_scale=10e-2):
+		L = hidden_dims.shape[0]
 		self.params = {}
 		self.activation = activation_function
 		self.hidden_layers = L
 		for i in range(L+1):
 			indexW = 'W' + str(i)
 			indexb = 'b' + str(i)
-			if i == 0
+			if i == 0:
 				self.params[indexW] = np.random.normal(0,weight_scale,(input_dim,hidden_dims[i]))
 				self.params[indexb] = np.random.normal(0,weight_scale,(hidden_dims[i]))
-			else if i == L:
+			elif i == L:
 				self.params[indexW] = np.random.normal(0,weight_scale,(hidden_dims[i-1],num_classes))
 				self.params[indexb] = np.random.normal(0,weight_scale,(num_classes))
 			else : 
@@ -47,33 +47,68 @@ class NeuralNetwork(object):
 		N,_  = X.shape
 		X_i = X
 		backup = []
+
+		# Forward Pass
 		for i in range(self.hidden_layers + 1):
 			indexW = 'W' + str(i)
 			indexb = 'b' + str(i)	
 			W = self.params[indexW] 
 			b = self.params[indexb] 
 			X_old = X_i
-			X_i = linear(X_i,W,b)
+			
+			X_i = self.linear(X_i,W,b)
 			# Use any activation fucntion
-			X_i = act_tanh(X_i)
+			if(self.activation == "sigmoid"):
+				X_i = self.act_sigmoid(X_i)
+			elif(self.activation == "tanh"):
+				X_i = self.act_tanh(X_i)
 			backup.append((X_old,X_i))
-			# X_i = act_sigmoid(X_i)
 
-		# For sigmoid activation function
-		# y_target[y_target == 0] = -1
+		# For tanh activation function
+		if(self.activation == "tanh"):
+			y_target[y_target == 0] = -1
 		scores = X_i
+
+		# L2 error
 		cost = np.sum(np.square(X_i-y_target))/N
 		self.grads = {}
 		dX = 2*(scores-y_target)/N
-		for i in xrange(L+1,0,-1):
+
+		# Backward Pass
+		for i in range(self.hidden_layers+1,0,-1):			
 			indexW = 'W' + str(i-1)
 			indexb = 'b' + str(i-1)
-			x_old,x_in = backup[i]
-			dX = dtanh(dX,x_in)
-			self.grads[indexW], self.grads[indexb], dX = dlinear(dX,params[indexW],x_old) 
+			x_old,x_in = backup[i-1]
+			if(self.activation == "sigmoid"):
+				dX = self.dsigmoid(dX,x_in)
+			elif(self.activation == "tanh"):
+				dX = self.dtanh(dX,x_in)
+			
+			self.grads[indexW], self.grads[indexb], dX = self.dlinear(dX,self.params[indexW],x_old) 
 
 		return cost
 
-	
-			
+	def train(self,X_train,y_train,X_test,y_test,epochs=1000,learning_rate=10e-4,batch_size=100):
+		N, M = X_train.shape
+		no_of_batches = int(N/batch_size)
+		
+		X_s = X_train[0:no_of_batches*batch_size]
+		X_s_t = X_train[no_of_batches*batch_size:]
+		X_batches = np.split(X_s,no_of_batches)
+		X_batches.append(X_s_t)
+
+		y_s = y_train[0:no_of_batches*batch_size]
+		y_s_t = y_train[no_of_batches*batch_size:]
+		y_batches = np.split(y_s,no_of_batches)
+		y_batches.append(y_s_t)
+
+		for i in range(epochs):
+			for j in range(len(X_batches)):				
+				cost = self.loss_1(X_batches[j],y_batches[j])
+				print (cost)
+				for i in range(self.hidden_layers + 1):
+					indexW = 'W' + str(i)
+					indexb = 'b' + str(i)	
+					W = self.params[indexW] 
+					b = self.params[indexb] 
 		
