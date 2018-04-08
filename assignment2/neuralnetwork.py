@@ -43,7 +43,7 @@ class NeuralNetwork(object):
 		db = np.ones(X.shape[0]).dot(dX)
 		return dW, db, dx
 
-	def loss_1(self,X,y_target):
+	def loss_1(self,X,y_target,predict=False):
 		N,_  = X.shape
 		X_i = X
 		backup = []
@@ -71,27 +71,32 @@ class NeuralNetwork(object):
 
 		# L2 error
 		cost = np.sum(np.square(X_i-y_target))/N
-		self.grads = {}
-		dX = 2*(scores-y_target)/N
 
 		# Backward Pass
-		for i in range(self.hidden_layers+1,0,-1):			
-			indexW = 'W' + str(i-1)
-			indexb = 'b' + str(i-1)
-			x_old,x_in = backup[i-1]
-			if(self.activation == "sigmoid"):
-				dX = self.dsigmoid(dX,x_in)
-			elif(self.activation == "tanh"):
-				dX = self.dtanh(dX,x_in)
-			
-			self.grads[indexW], self.grads[indexb], dX = self.dlinear(dX,self.params[indexW],x_old) 
+		if(predict == False):
+			self.grads = {}
+			dX = 2*(scores-y_target)/N
+			for i in range(self.hidden_layers+1,0,-1):			
+				indexW = 'W' + str(i-1)
+				indexb = 'b' + str(i-1)
+				x_old,x_in = backup[i-1]
+				if(self.activation == "sigmoid"):
+					dX = self.dsigmoid(dX,x_in)
+				elif(self.activation == "tanh"):
+					dX = self.dtanh(dX,x_in)
+				
+				self.grads[indexW], self.grads[indexb], dX = self.dlinear(dX,self.params[indexW],x_old) 
 
 		return cost
 
-	def train(self,X_train,y_train,X_test,y_test,epochs=1000,learning_rate=10e-4,batch_size=100):
+	def predict(self,X_test,y_test):
+		cost = self.loss_1(X_test,y_test,predict=True)
+		return cost
+
+	def train(self,X_train,y_train,X_test,y_test,epochs=1000,learning_rate=10e-3,batch_size=1000):
 		N, M = X_train.shape
 		no_of_batches = int(N/batch_size)
-		
+		print(no_of_batches)
 		X_s = X_train[0:no_of_batches*batch_size]
 		X_s_t = X_train[no_of_batches*batch_size:]
 		X_batches = np.split(X_s,no_of_batches)
@@ -103,12 +108,18 @@ class NeuralNetwork(object):
 		y_batches.append(y_s_t)
 
 		for i in range(epochs):
-			for j in range(len(X_batches)):				
+			for j in range(no_of_batches+1):				
 				cost = self.loss_1(X_batches[j],y_batches[j])
 				print (cost)
+				if(i%100==0):
+					cost = self.predict(X_test,y_test)
+					print("Test Error : ",cost)
+					learning_rate *= 0.95
+
 				for i in range(self.hidden_layers + 1):
 					indexW = 'W' + str(i)
 					indexb = 'b' + str(i)	
 					W = self.params[indexW] 
 					b = self.params[indexb] 
-		
+					self.params[indexW] = W - learning_rate*self.grads[indexW]
+					self.params[indexb] = b - learning_rate*self.grads[indexb]
