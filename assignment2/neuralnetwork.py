@@ -4,8 +4,12 @@ class NeuralNetwork(object):
 	def __init__(self,input_dim,hidden_dims,num_classes,activation_function="tanh",weight_scale=10e-2):
 		L = hidden_dims.shape[0]
 		self.params = {}
+		# Store which activation function to use
 		self.activation = activation_function
 		self.hidden_layers = L
+		# Create a map of  weight and bias for every layer
+		# Initialize all the weights randomly sampled from normal distribution
+
 		for i in range(L+1):
 			indexW = 'W' + str(i)
 			indexb = 'b' + str(i)
@@ -15,7 +19,7 @@ class NeuralNetwork(object):
 			elif i == L:
 				self.params[indexW] = np.random.normal(0,weight_scale,(hidden_dims[i-1],num_classes))
 				self.params[indexb] = np.random.normal(0,weight_scale,(num_classes))
-			else : 
+			else :
 				self.params[indexW] = np.random.normal(0,weight_scale,(hidden_dims[i-1],hidden_dims[i]))
 				self.params[indexb] = np.random.normal(0,weight_scale,(hidden_dims[i]))
 
@@ -51,23 +55,34 @@ class NeuralNetwork(object):
 		# Forward Pass
 		for i in range(self.hidden_layers + 1):
 			indexW = 'W' + str(i)
-			indexb = 'b' + str(i)	
-			W = self.params[indexW] 
-			b = self.params[indexb] 
+			indexb = 'b' + str(i)
+			W = self.params[indexW]
+			b = self.params[indexb]
 			X_old = X_i
-			
+
+			# Affine function
 			X_i = self.linear(X_i,W,b)
-			# Use any activation fucntion
+			# Activation function
 			if(self.activation == "sigmoid"):
 				X_i = self.act_sigmoid(X_i)
 			elif(self.activation == "tanh"):
 				X_i = self.act_tanh(X_i)
+			# Store node data for use in backward pass
 			backup.append((X_old,X_i))
 
-		# For tanh activation function
+		# For tanh activation function the labels of 0 replaced with -1
 		if(self.activation == "tanh"):
 			y_target[y_target == 0] = -1
+
 		scores = X_i
+		if(predict == True):
+			if(self.activation == "sigmoid"):
+				scores[scores > 0.5] = 1
+				scores[scores <= 0.5] = 0
+			else:
+				scores[scores > 0] = 1
+				scores[scores <= 0] = 0
+			return scores
 
 		# L2 error
 		cost = np.sum(np.square(X_i-y_target))/N
@@ -76,7 +91,7 @@ class NeuralNetwork(object):
 		if(predict == False):
 			self.grads = {}
 			dX = 2*(scores-y_target)/N
-			for i in range(self.hidden_layers+1,0,-1):			
+			for i in range(self.hidden_layers+1,0,-1):
 				indexW = 'W' + str(i-1)
 				indexb = 'b' + str(i-1)
 				x_old,x_in = backup[i-1]
@@ -84,19 +99,88 @@ class NeuralNetwork(object):
 					dX = self.dsigmoid(dX,x_in)
 				elif(self.activation == "tanh"):
 					dX = self.dtanh(dX,x_in)
-				
-				self.grads[indexW], self.grads[indexb], dX = self.dlinear(dX,self.params[indexW],x_old) 
+
+				self.grads[indexW], self.grads[indexb], dX = self.dlinear(dX,self.params[indexW],x_old)
+
+		return cost
+
+	def loss_2(self,X,y_target,predict=False):
+		N,_  = X.shape
+		X_i = X
+		backup = []
+
+		# Forward Pass
+		for i in range(self.hidden_layers + 1):
+			indexW = 'W' + str(i)
+			indexb = 'b' + str(i)
+			W = self.params[indexW]
+			b = self.params[indexb]
+			X_old = X_i
+
+			# Affine function
+			X_i = self.linear(X_i,W,b)
+			# Activation function
+			if(i != self.hidden_layers):
+				if(self.activation == "sigmoid"):
+					X_i = self.act_sigmoid(X_i)
+				elif(self.activation == "tanh"):
+					X_i = self.act_tanh(X_i)
+			# Store node data for use in backward pass
+			backup.append((X_old,X_i))
+
+		scores = X_i
+		temp = np.exp(X_i)
+		scores = temp / np.reshape(np.sum(temp,axis=1),(N,1))
+
+		scores_row1 = np.reshape(scores[:,0],(N,1))
+		scores_row2 = np.reshape(scores[:,1],(N,1))
+
+		if(predict == True):
+			scores_row1[scores_row1 > 0.5] = 1
+			scores_row1[scores_row1 <= 0.5] = 0
+			return scores_row1
+
+		# L2 error
+		#Softmax function
+
+		cost = np.sum(np.square(scores_row1-y_target))/N
+
+		# Backward Pass
+
+		if(predict == False):
+			self.grads = {}
+			dX = 2*(scores_row1-y_target)/N
+			temp = scores
+			temp[:,[0,1]]  = scores[:,[1, 0]]
+			temp[:,1] *= -1
+
+			dX = dX*(scores*temp)
+			for i in range(self.hidden_layers+1,0,-1):
+				indexW = 'W' + str(i-1)
+				indexb = 'b' + str(i-1)
+				x_old,x_in = backup[i-1]
+				if(i-1 != self.hidden_layers):
+					if(self.activation == "sigmoid"):
+						dX = self.dsigmoid(dX,x_in)
+					elif(self.activation == "tanh"):
+						dX = self.dtanh(dX,x_in)
+
+				self.grads[indexW], self.grads[indexb], dX = self.dlinear(dX,self.params[indexW],x_old)
 
 		return cost
 
 	def predict(self,X_test,y_test):
-		cost = self.loss_1(X_test,y_test,predict=True)
+		cost = np.array([])
+		if(self.method == "one"):
+			cost = self.loss_1(X_test,y_test,predict=True)
+		else:
+			cost = self.loss_2(X_test,y_test,predict=True)
 		return cost
 
-	def train(self,X_train,y_train,X_test,y_test,epochs=1000,learning_rate=10e-3,batch_size=1000):
+	def train(self,X_train,y_train,X_test,y_test,epochs=500,learning_rate=10e-3,batch_size=1000,method="one"):
 		N, M = X_train.shape
 		no_of_batches = int(N/batch_size)
-		print(no_of_batches)
+		#print(no_of_batches)
 		X_s = X_train[0:no_of_batches*batch_size]
 		X_s_t = X_train[no_of_batches*batch_size:]
 		X_batches = np.split(X_s,no_of_batches)
@@ -106,20 +190,33 @@ class NeuralNetwork(object):
 		y_s_t = y_train[no_of_batches*batch_size:]
 		y_batches = np.split(y_s,no_of_batches)
 		y_batches.append(y_s_t)
-
+		self.no_epochs = []
+		self.square_error_train = []
+		self.square_error_test = []
+		self.method = method
 		for i in range(epochs):
-			for j in range(no_of_batches+1):				
-				cost = self.loss_1(X_batches[j],y_batches[j])
-				print (cost)
-				if(i%100==0):
-					cost = self.predict(X_test,y_test)
-					print("Test Error : ",cost)
+			for j in range(no_of_batches+1):
+				if(method == "two"):
+					cost = self.loss_2(X_batches[j],y_batches[j])
+				else:
+					cost = self.loss_1(X_batches[j],y_batches[j])
+				if(i%50==0 and j==0):
+					prediction = self.predict(X_test,y_test)
+					print(prediction)
+					print("-----------Ratio of Correct predictions over testset(%d/%d)-----------"%(np.sum(prediction == y_test),y_test.shape[0]))
+					prediction = self.predict(X_train,y_train)
+					print("-----------Ratio of Correct predictions over training set(%d/%d)-----------"%(np.sum(prediction == y_train),y_train.shape[0]))
 					learning_rate *= 0.95
 
-				for i in range(self.hidden_layers + 1):
-					indexW = 'W' + str(i)
-					indexb = 'b' + str(i)	
-					W = self.params[indexW] 
-					b = self.params[indexb] 
+				for k in range(self.hidden_layers + 1):
+					indexW = 'W' + str(k)
+					indexb = 'b' + str(k)
+					W = self.params[indexW]
+					b = self.params[indexb]
 					self.params[indexW] = W - learning_rate*self.grads[indexW]
 					self.params[indexb] = b - learning_rate*self.grads[indexb]
+			print("Epoch (%d/%d) Training Error : %f"%(i+1,epochs,cost))
+		prediction = self.predict(X_test,y_test)
+		print("-----------Ratio of Correct predictions over testset(%d/%d)-----------"%(np.sum(prediction == y_test),y_test.shape[0]))
+		prediction = self.predict(X_train,y_train)
+		print("-----------Ratio of Correct predictions over training set(%d/%d)-----------"%(np.sum(prediction == y_train),y_train.shape[0]))
