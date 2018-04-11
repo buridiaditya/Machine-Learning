@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 class NeuralNetwork(object):
 	def __init__(self,input_dim,hidden_dims,num_classes,activation_function="tanh",weight_scale=10e-2):
@@ -51,7 +52,7 @@ class NeuralNetwork(object):
 		N,_  = X.shape
 		X_i = X
 		backup = []
-
+		self.grads = {}
 		# Forward Pass
 		for i in range(self.hidden_layers + 1):
 			indexW = 'W' + str(i)
@@ -89,7 +90,6 @@ class NeuralNetwork(object):
 
 		# Backward Pass
 		if(predict == False):
-			self.grads = {}
 			dX = 2*(scores-y_target)/N
 			for i in range(self.hidden_layers+1,0,-1):
 				indexW = 'W' + str(i-1)
@@ -108,7 +108,7 @@ class NeuralNetwork(object):
 		N,_  = X.shape
 		X_i = X
 		backup = []
-
+		self.grads = {}
 		# Forward Pass
 		for i in range(self.hidden_layers + 1):
 			indexW = 'W' + str(i)
@@ -148,18 +148,20 @@ class NeuralNetwork(object):
 		# Backward Pass
 
 		if(predict == False):
-			self.grads = {}
+	
 			dX = 2*(scores_row1-y_target)/N
-			temp = scores
-			temp[:,[0,1]]  = scores[:,[1, 0]]
+			#temp = scores
+			#temp[:,[0,1]]  = scores[:,[1, 0]]
+			
+			temp = 1-scores
 			temp[:,1] *= -1
-
 			dX = dX*(scores*temp)
+
 			for i in range(self.hidden_layers+1,0,-1):
 				indexW = 'W' + str(i-1)
 				indexb = 'b' + str(i-1)
 				x_old,x_in = backup[i-1]
-				if(i-1 != self.hidden_layers):
+				if(i != self.hidden_layers +1):
 					if(self.activation == "sigmoid"):
 						dX = self.dsigmoid(dX,x_in)
 					elif(self.activation == "tanh"):
@@ -177,7 +179,17 @@ class NeuralNetwork(object):
 			cost = self.loss_2(X_test,y_test,predict=True)
 		return cost
 
-	def train(self,X_train,y_train,X_test,y_test,epochs=500,learning_rate=10e-3,batch_size=1000,method="one"):
+	def plot(self):
+		plt.plot(self.no_epochs,self.square_error_train,'-',label='Insample Error')
+		plt.plot(self.no_epochs,self.square_error_test,'-',label='Outsample Error')
+		plt.xlabel("Epochs")
+		plt.ylabel("Error")
+		plt.title("Error vs Epochs")
+		plt.legend()
+		plt.show()
+
+
+	def train(self,X_train,y_train,X_test,y_test,epochs=100,learning_rate=1e-3,learning_rate_decay=0.95,batch_size=1000,method="one"):
 		N, M = X_train.shape
 		no_of_batches = int(N/batch_size)
 		#print(no_of_batches)
@@ -194,19 +206,24 @@ class NeuralNetwork(object):
 		self.square_error_train = []
 		self.square_error_test = []
 		self.method = method
+		cost = 0.0
 		for i in range(epochs):
+
+			if(i%25==0):
+				prediction = self.predict(X_test,y_test)
+				#print(prediction)
+				print("-----------Ratio of Correct predictions over testset(%d/%d)-----------"%(np.sum(prediction == y_test),y_test.shape[0]))
+				prediction = self.predict(X_train,y_train)
+				print("-----------Ratio of Correct predictions over training set(%d/%d)-----------"%(np.sum(prediction == y_train),y_train.shape[0]))
+
+			if((i+1)%25==0):
+				learning_rate *= learning_rate_decay
+
 			for j in range(no_of_batches+1):
 				if(method == "two"):
 					cost = self.loss_2(X_batches[j],y_batches[j])
 				else:
-					cost = self.loss_1(X_batches[j],y_batches[j])
-				if(i%50==0 and j==0):
-					prediction = self.predict(X_test,y_test)
-					print(prediction)
-					print("-----------Ratio of Correct predictions over testset(%d/%d)-----------"%(np.sum(prediction == y_test),y_test.shape[0]))
-					prediction = self.predict(X_train,y_train)
-					print("-----------Ratio of Correct predictions over training set(%d/%d)-----------"%(np.sum(prediction == y_train),y_train.shape[0]))
-					learning_rate *= 0.95
+					cost = self.loss_1(X_batches[j],y_batches[j])		
 
 				for k in range(self.hidden_layers + 1):
 					indexW = 'W' + str(k)
@@ -215,7 +232,15 @@ class NeuralNetwork(object):
 					b = self.params[indexb]
 					self.params[indexW] = W - learning_rate*self.grads[indexW]
 					self.params[indexb] = b - learning_rate*self.grads[indexb]
-			print("Epoch (%d/%d) Training Error : %f"%(i+1,epochs,cost))
+
+			print("Epoch (%d/%d) Training Error : %f"%(i+1,epochs,cost))	
+
+			prediction = self.predict(X_test,y_test)
+			outsample_cost = np.sum(np.square(prediction - y_test))/y_test.shape[0]
+			self.no_epochs.append(i)
+			self.square_error_train.append(cost)
+			self.square_error_test.append(outsample_cost)
+		
 		prediction = self.predict(X_test,y_test)
 		print("-----------Ratio of Correct predictions over testset(%d/%d)-----------"%(np.sum(prediction == y_test),y_test.shape[0]))
 		prediction = self.predict(X_train,y_train)
