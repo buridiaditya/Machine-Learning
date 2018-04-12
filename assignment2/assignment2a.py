@@ -67,4 +67,5 @@ y_test = y_target[trainN:]
 # Training the model
 N,M = X_train.shape
 nn = NeuralNetwork(M,np.array([100,50]),1)
-nn.train(X_train,y_train,X_test,y_test)
+nn.train(X_train,y_train,X_test,y_test,epochs=100,learning_rate=1e-1,learning_rate_decay=0.98)
+nn.plot()
