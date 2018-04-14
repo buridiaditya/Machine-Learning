@@ -49,7 +49,7 @@ class NeuralNetwork(object):
 		return dW, db, dx
 
 	def loss_1(self,X,y_target,predict=False):
-		N,_  = X.shape
+		N  = X.shape[0]
 		X_i = X
 		backup = []
 		self.grads = {}
@@ -59,7 +59,7 @@ class NeuralNetwork(object):
 			indexb = 'b' + str(i)
 			W = self.params[indexW]
 			b = self.params[indexb]
-			X_old = X_i
+			X_old = X_i.copy()
 
 			# Affine function
 			X_i = self.linear(X_i,W,b)
@@ -71,36 +71,31 @@ class NeuralNetwork(object):
 			# Store node data for use in backward pass
 			backup.append((X_old,X_i))
 
-		# For tanh activation function the labels of 0 replaced with -1
-		if(self.activation == "tanh"):
-			y_target[y_target == 0] = -1
-
-		scores = X_i
+		scores = X_i.copy()
 		if(predict == True):
-			if(self.activation == "sigmoid"):
-				scores[scores > 0.5] = 1
-				scores[scores <= 0.5] = 0
-			else:
-				scores[scores > 0] = 1
-				scores[scores <= 0] = 0
 			return scores
 
+		y_target_ = y_target.copy()
+		# For tanh activation function the labels of 0 replaced with -1
+		if(self.activation == "tanh"):
+			y_target_[y_target_ == 0] = -1
+
+
 		# L2 error
-		cost = np.sum(np.square(X_i-y_target))/N
+		cost = np.sum(np.square(X_i-y_target_))/N
 
 		# Backward Pass
-		if(predict == False):
-			dX = 2*(scores-y_target)/N
-			for i in range(self.hidden_layers+1,0,-1):
-				indexW = 'W' + str(i-1)
-				indexb = 'b' + str(i-1)
-				x_old,x_in = backup[i-1]
-				if(self.activation == "sigmoid"):
-					dX = self.dsigmoid(dX,x_in)
-				elif(self.activation == "tanh"):
-					dX = self.dtanh(dX,x_in)
+		dX = 2*(scores-y_target_)/N
+		for i in range(self.hidden_layers+1,0,-1):
+			indexW = 'W' + str(i-1)
+			indexb = 'b' + str(i-1)
+			x_old,x_in = backup[i-1]
+			if(self.activation == "sigmoid"):
+				dX = self.dsigmoid(dX,x_in)
+			elif(self.activation == "tanh"):
+				dX = self.dtanh(dX,x_in)
 
-				self.grads[indexW], self.grads[indexb], dX = self.dlinear(dX,self.params[indexW],x_old)
+			self.grads[indexW], self.grads[indexb], dX = self.dlinear(dX,self.params[indexW],x_old)
 
 		return cost
 
@@ -115,7 +110,7 @@ class NeuralNetwork(object):
 			indexb = 'b' + str(i)
 			W = self.params[indexW]
 			b = self.params[indexb]
-			X_old = X_i
+			X_old = X_i.copy()
 
 			# Affine function
 			X_i = self.linear(X_i,W,b)
@@ -128,46 +123,40 @@ class NeuralNetwork(object):
 			# Store node data for use in backward pass
 			backup.append((X_old,X_i))
 
-		scores = X_i
+		scores = X_i.copy()
 		temp = np.exp(X_i)
 		scores = temp / np.reshape(np.sum(temp,axis=1),(N,1))
 
-		scores_row1 = np.reshape(scores[:,0],(N,1))
-		scores_row2 = np.reshape(scores[:,1],(N,1))
+		scores_row1 = np.reshape(scores[:,0],(N,1)).copy()
+		scores_row2 = np.reshape(scores[:,1],(N,1)).copy()
 
 		if(predict == True):
-			scores_row1[scores_row1 > 0.5] = 1
-			scores_row1[scores_row1 <= 0.5] = 0
 			return scores_row1
 
 		# L2 error
 		#Softmax function
-
 		cost = np.sum(np.square(scores_row1-y_target))/N
 
 		# Backward Pass
+		dX = 2*(scores_row1-y_target)/N
+		#temp = scores
+		#temp[:,[0,1]]  = scores[:,[1, 0]]
 
-		if(predict == False):
+		temp = 1-scores
+		temp[:,1] *= -1
+		dX = dX*(scores*temp)
 
-			dX = 2*(scores_row1-y_target)/N
-			#temp = scores
-			#temp[:,[0,1]]  = scores[:,[1, 0]]
+		for i in range(self.hidden_layers+1,0,-1):
+			indexW = 'W' + str(i-1)
+			indexb = 'b' + str(i-1)
+			x_old,x_in = backup[i-1]
+			if(i != self.hidden_layers +1):
+				if(self.activation == "sigmoid"):
+					dX = self.dsigmoid(dX,x_in)
+				elif(self.activation == "tanh"):
+					dX = self.dtanh(dX,x_in)
 
-			temp = 1-scores
-			temp[:,1] *= -1
-			dX = dX*(scores*temp)
-
-			for i in range(self.hidden_layers+1,0,-1):
-				indexW = 'W' + str(i-1)
-				indexb = 'b' + str(i-1)
-				x_old,x_in = backup[i-1]
-				if(i != self.hidden_layers +1):
-					if(self.activation == "sigmoid"):
-						dX = self.dsigmoid(dX,x_in)
-					elif(self.activation == "tanh"):
-						dX = self.dtanh(dX,x_in)
-
-				self.grads[indexW], self.grads[indexb], dX = self.dlinear(dX,self.params[indexW],x_old)
+			self.grads[indexW], self.grads[indexb], dX = self.dlinear(dX,self.params[indexW],x_old)
 
 		return cost
 
@@ -177,6 +166,14 @@ class NeuralNetwork(object):
 			cost = self.loss_1(X_test,y_test,predict=True)
 		else:
 			cost = self.loss_2(X_test,y_test,predict=True)
+
+		if(self.activation == "sigmoid" or self.method == "two"):
+			cost[cost > 0.5] = 1
+			cost[cost <= 0.5] = 0
+		else:
+			cost[cost > 0] = 1
+			cost[cost <= 0] = 0
+
 		return cost
 
 	def plot(self):
@@ -196,36 +193,44 @@ class NeuralNetwork(object):
 		X_s = X_train[0:no_of_batches*batch_size]
 		X_s_t = X_train[no_of_batches*batch_size:]
 		X_batches = np.split(X_s,no_of_batches)
-		X_batches.append(X_s_t)
+		
+		if(N%batch_size):
+			X_batches.append(X_s_t)
 
 		y_s = y_train[0:no_of_batches*batch_size]
 		y_s_t = y_train[no_of_batches*batch_size:]
 		y_batches = np.split(y_s,no_of_batches)
-		y_batches.append(y_s_t)
+
+		if(N%batch_size):
+			y_batches.append(y_s_t)
+		
 		self.no_epochs = []
 		self.square_error_train = []
 		self.square_error_test = []
 		self.method = method
+		
 		cost = 0.0
-		oldcost=0.0
 		for i in range(epochs):
-
+			cost = 0.0
+			
 			if(i%25==0):
 				prediction = self.predict(X_test,y_test)
-				#print(prediction)
 				print("-----------Ratio of Correct predictions over testset(%d/%d)-----------"%(np.sum(prediction == y_test),y_test.shape[0]))
+				#print (prediction)
 				prediction = self.predict(X_train,y_train)
 				print("-----------Ratio of Correct predictions over training set(%d/%d)-----------"%(np.sum(prediction == y_train),y_train.shape[0]))
 
 			if((i+1)%25==0):
 				learning_rate *= learning_rate_decay
 
-			for j in range(no_of_batches+1):
+			for j in range(no_of_batches+ ( 1 if(N%batch_size) else 0 ) ):
+				#print (X_batches[j].shape)
+				temp1 = 0.0
 				if(method == "two"):
-					cost = self.loss_2(X_batches[j],y_batches[j])
+					temp1 = self.loss_2(X_batches[j],y_batches[j])
 				else:
-					cost = self.loss_1(X_batches[j],y_batches[j])
-
+					temp1 = self.loss_1(X_batches[j],y_batches[j])
+				cost += temp1
 				for k in range(self.hidden_layers + 1):
 					indexW = 'W' + str(k)
 					indexb = 'b' + str(k)
@@ -234,18 +239,18 @@ class NeuralNetwork(object):
 					self.params[indexW] = W - learning_rate*self.grads[indexW]
 					self.params[indexb] = b - learning_rate*self.grads[indexb]
 
-			print("Epoch (%d/%d) Training Error : %f"%(i+1,epochs,cost))
+			print("Epoch (%d/%d) Training Error : %f"%(i+1,epochs,cost/( no_of_batches+ ( 1 if(N%batch_size) else 0 ) ) ) )
 
 			prediction = self.predict(X_test,y_test)
 			outsample_cost = np.sum(np.square(prediction - y_test))/y_test.shape[0]
 			self.no_epochs.append(i)
 			self.square_error_train.append(cost)
 			self.square_error_test.append(outsample_cost)
-			if(np.absolute(cost-oldcost) < 0.0001):
+			if(cost/( no_of_batches+ ( 1 if(N%batch_size) else 0 )) < 0.005):
 				break;
-			oldcost = cost
 
 		prediction = self.predict(X_test,y_test)
+		#print(prediction)
 		print("-----------Ratio of Correct predictions over testset(%d/%d)-----------"%(np.sum(prediction == y_test),y_test.shape[0]))
 		prediction = self.predict(X_train,y_train)
 		print("-----------Ratio of Correct predictions over training set(%d/%d)-----------"%(np.sum(prediction == y_train),y_train.shape[0]))
