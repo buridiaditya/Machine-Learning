@@ -1,3 +1,4 @@
+
 import numpy as np
 import re
 import nltk
@@ -64,16 +65,17 @@ y_train = y_target[0:trainN]
 X_test = x_encoded[trainN:]
 y_test = y_target[trainN:]
 
-# Training the model without softmax layer
+# Training the model with softmax layer
 N,M = X_train.shape
-print ("Training without softmax layer with activation function as tanh")
-# Tanh activation function
-nn = NeuralNetwork(M,np.array([100,50]),1)
-nn.train(X_train,y_train,X_test,y_test,epochs=200,learning_rate=1e-1,learning_rate_decay=0.98)
-nn.plot()
 
-print ("Training without softmax layer with activation function as sigmoid")
+print ("Training with softmax layer with activation function as tanh")
+# tanh activation_function
+nn = NeuralNetwork(M,np.array([100,50]),2)
+nn.train(X_train,y_train,X_test,y_test,epochs=300,learning_rate=2e-1,learning_rate_decay=0.98,method="two")
+nn.plot
+
+print ("Training with softmax layer with activation function as sigmoid")
 # Sigmoid activation function
-nn2 = NeuralNetwork(M,np.array([100,50]),1,activation_function="sigmoid",weight_scale=1)
-nn2.train(X_train,y_train,X_test,y_test,epochs=500,learning_rate=2e-1,learning_rate_decay=0.98)
+nn2 = NeuralNetwork(M,np.array([100,50]),2,activation_function="sigmoid",weight_scale=1)
+nn2.train(X_train,y_train,X_test,y_test,epochs=500,learning_rate=2e-1,learning_rate_decay=0.98,method="two")
 nn2.plot()

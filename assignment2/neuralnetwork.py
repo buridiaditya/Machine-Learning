@@ -148,11 +148,11 @@ class NeuralNetwork(object):
 		# Backward Pass
 
 		if(predict == False):
-	
+
 			dX = 2*(scores_row1-y_target)/N
 			#temp = scores
 			#temp[:,[0,1]]  = scores[:,[1, 0]]
-			
+
 			temp = 1-scores
 			temp[:,1] *= -1
 			dX = dX*(scores*temp)
@@ -207,6 +207,7 @@ class NeuralNetwork(object):
 		self.square_error_test = []
 		self.method = method
 		cost = 0.0
+		oldcost=0.0
 		for i in range(epochs):
 
 			if(i%25==0):
@@ -223,7 +224,7 @@ class NeuralNetwork(object):
 				if(method == "two"):
 					cost = self.loss_2(X_batches[j],y_batches[j])
 				else:
-					cost = self.loss_1(X_batches[j],y_batches[j])		
+					cost = self.loss_1(X_batches[j],y_batches[j])
 
 				for k in range(self.hidden_layers + 1):
 					indexW = 'W' + str(k)
@@ -233,14 +234,17 @@ class NeuralNetwork(object):
 					self.params[indexW] = W - learning_rate*self.grads[indexW]
 					self.params[indexb] = b - learning_rate*self.grads[indexb]
 
-			print("Epoch (%d/%d) Training Error : %f"%(i+1,epochs,cost))	
+			print("Epoch (%d/%d) Training Error : %f"%(i+1,epochs,cost))
 
 			prediction = self.predict(X_test,y_test)
 			outsample_cost = np.sum(np.square(prediction - y_test))/y_test.shape[0]
 			self.no_epochs.append(i)
 			self.square_error_train.append(cost)
 			self.square_error_test.append(outsample_cost)
-		
+			if(np.absolute(cost-oldcost) < 0.0001):
+				break;
+			oldcost = cost
+
 		prediction = self.predict(X_test,y_test)
 		print("-----------Ratio of Correct predictions over testset(%d/%d)-----------"%(np.sum(prediction == y_test),y_test.shape[0]))
 		prediction = self.predict(X_train,y_train)

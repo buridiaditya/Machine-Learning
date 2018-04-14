@@ -1,0 +1,18 @@
+############ USING JUPYTER NOTEBOOK #################
+For better training experience use the jupyter notebook
+Navigate to the directory containing the notebook and open a terminal session and execute
+
+$ jupyter notebook
+
+############# USING PYTHON FILES ##############
+The assignment2a.py contains the code for the first part of the assignment and
+assignment2b.py contains the second part of the assignment.
+To execute
+
+$ python3 assignment2a.py > results2a.txt
+$ python3 assignment2b.py > results2b.txt
+
+#########################
+1. All the function related to the neural network are written in the neuralnetwork.py file
+
+Check the report for plots and other statistics.
