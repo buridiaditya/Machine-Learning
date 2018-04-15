@@ -5,6 +5,7 @@ class NeuralNetwork(object):
 	def __init__(self,input_dim,hidden_dims,num_classes,activation_function="tanh",weight_scale=10e-2):
 		L = hidden_dims.shape[0]
 		self.params = {}
+		self.grads = {}
 		# Store which activation function to use
 		self.activation = activation_function
 		self.hidden_layers = L
@@ -69,12 +70,10 @@ class NeuralNetwork(object):
 				X_i = self.act_tanh(X_i)
 			# Store node data for use in backward pass
 			backup.append( (np.copy(X_old), np.copy(X_i) ) )
- 
+
 		scores = np.copy(X_i)
 		if(predict == True):
 			return scores
-
-		self.grads = {}
 
 		y_target_ = np.copy(y_target)
 		# For tanh activation function the labels of 0 replaced with -1
@@ -83,7 +82,7 @@ class NeuralNetwork(object):
 
 
 		# L2 error
-		cost = np.sum(np.square(X_i-y_target_))
+		cost = np.sum(np.square(scores-y_target_))
 
 		# Backward Pass
 		dX = 2*(scores-y_target_)
@@ -134,7 +133,6 @@ class NeuralNetwork(object):
 		if(predict == True):
 			return scores_row1
 
-		self.grads = {}
 		# L2 error
 		#Softmax function
 		cost = np.sum(np.square(scores_row1-y_target))
@@ -188,15 +186,15 @@ class NeuralNetwork(object):
 		plt.show()
 
 
-	def train(self,X_train,y_train,X_test,y_test,epochs=100,learning_rate=1e-3,learning_rate_decay=0.95,batch_size=1000,method="one"):
+	def train(self,X_train,y_train,X_test,y_test,epochs=100,learning_rate=1e-3,learning_rate_decay=0.95,batch_size=1000,method="one",bound=0.015):
 		N, M = X_train.shape
 		no_of_batches = int(N/batch_size)
-		
+
 		# Create batches from training set
 		X_s = X_train[0:no_of_batches*batch_size]
 		X_s_t = X_train[no_of_batches*batch_size:]
 		X_batches = np.split(X_s,no_of_batches)
-		
+
 		if(N%batch_size):
 			X_batches.append(X_s_t)
 
@@ -206,53 +204,57 @@ class NeuralNetwork(object):
 
 		if(N%batch_size):
 			y_batches.append(y_s_t)
-		
+
 		self.no_epochs = []
 		self.square_error_train = []
 		self.square_error_test = []
 		self.method = method
-		
+
 		cost = 0.0
 		X_batches = np.array(X_batches)
 		y_batches = np.array(y_batches)
 		for i in range(epochs):
 			cost = 0.0
+
+			# Random Shuffling
+			'''
 			counter = no_of_batches+ ( 1 if(N%batch_size) else 0 )
-			indices = np.arange(counter).reshape(counter,1)
+			indices = np.arange(counter)
 			np.random.shuffle(indices)
-			X_batches = X_batches[indices,:]
-			y_batches = y_batches[indices,:]
+			X_batches = X_batches[indices]
+			y_batches = y_batches[indices]
+			'''
 			# Decay learning rate after 20 epochs
 			if((i+1)%20==0):
 				learning_rate *= learning_rate_decay
-			
-			prediction = self.predict(X_test,y_test)				
+
+			prediction = self.predict(X_test,y_test)
 			outsample_cost = np.sum(np.square(prediction - y_test))/y_test.shape[0]
 			print("-----------Ratio of Correct predictions over testset(%d/%d)-----------"%(np.sum(prediction == y_test),y_test.shape[0]))
-			
+
 			# Compute Train accuracy
 			prediction = self.predict(X_train,y_train)
 			insample_cost = np.sum(np.square(prediction - y_train))/y_train.shape[0]
 			print("-----------Ratio of Correct predictions over training set(%d/%d)-----------"%(np.sum(prediction == y_train),y_train.shape[0]))
-			
+			#print (prediction)
 			# Store insample and out sample error for plotting
 			self.no_epochs.append(i)
 			self.square_error_train.append(insample_cost)
 			self.square_error_test.append(outsample_cost)
-			
+
 			for j in range(no_of_batches+ ( 1 if(N%batch_size) else 0 ) ):
 				# Compute Test accuracy and out sample error
-				
+
 				temp1 = 0.0
 				# Decide which neural network architecture to use
 				if(method == "two"):
 					temp1 = self.loss_2(X_batches[j],y_batches[j])
 				else:
 					temp1 = self.loss_1(X_batches[j],y_batches[j])
-			
+
 				# Compute cummilative cost for showing per epoch cost
 				cost += temp1
-			
+
 				# Update weights of the neural network
 				for k in range(self.hidden_layers + 1):
 					indexW = 'W' + str(k)
@@ -261,11 +263,11 @@ class NeuralNetwork(object):
 					b = self.params[indexb]
 					self.params[indexW] = W - learning_rate*self.grads[indexW]
 					self.params[indexb] = b - learning_rate*self.grads[indexb]
-									
+
 			print("Epoch (%d/%d) Training Error : %f"%(i+1,epochs,cost/( no_of_batches+ ( 1 if(N%batch_size) else 0 ) ) ) )
-			
+
 			# If error is less than 0.005 stop training
-			if(cost/( no_of_batches+ ( 1 if(N%batch_size) else 0 )) < 0.015):
+			if(cost/( no_of_batches+ ( 1 if(N%batch_size) else 0 )) < bound):
 				break;
 
 		prediction = self.predict(X_test,y_test)
@@ -277,4 +279,3 @@ class NeuralNetwork(object):
 		self.no_epochs.append(i)
 		self.square_error_train.append(insample_cost)
 		self.square_error_test.append(outsample_cost)
-
